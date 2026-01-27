@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+.eggs/
+.env
+.venv
+venv/
+
+# Packaging
+build/
+dist/
+
+# Jupyter / notebooks
+.ipynb_checkpoints/
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Experiment outputs (DO NOT TRACK)
+experiments/runs/
+experiments/**/runs/
+results/
+outputs/
+figures/generated/
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.bak

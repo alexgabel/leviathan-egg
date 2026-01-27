@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use this code, please cite it as below."
+title: "Leviathan Egg"
+authors:
+  - family-names: Gabel
+    given-names: Alex
+version: 0.1.0
+date-released: 2026-01-27
+url: "https://github.com/alexgabel/leviathan-egg"
+license: MIT
