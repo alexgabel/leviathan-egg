@@ -9,7 +9,7 @@ description = "leviathan-egg"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
-authors = [{name = "Alex", family-name = "Gabel"}]
+authors = [{name = "Alex Gabel"}]
 dependencies = [
     "numpy>=1.24",
     "PyYAML>=6.0",
