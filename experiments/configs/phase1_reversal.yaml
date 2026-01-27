@@ -1,0 +1,81 @@
+# experiments/configs/phase1_reversal.yaml
+experiment_name: "phase1_reversal"
+description: >
+  Phase 1 canonical run targeting seasonal reversals of authority in a single patch.
+  Strong periodic forcing, moderate lock-in (violence+information), reversible leadership.
+author: "Alex Gabel"
+date_created: "2026-01-27"
+
+world_structure:
+  num_patches: 1
+  population_sizes:
+    agents: 300
+  environmental_parameters: {}
+
+seasonality:
+  seasonal_period: 120   # steps per "year"
+  phase_offsets:
+    patch_0: 0.0
+  forcing_amplitudes:
+    aggregation_benefit: 1.0      # amplitude on benefit of larger groups
+    coordination_cost: 0.6        # amplitude on coordination costs (often opposing phase)
+    hierarchy_rent: 0.7           # amplitude on rents/benefits of hierarchy
+    crisis: 0.6                   # amplitude on crisis-driven coordination need
+    festival: 1.0                 # amplitude on prestige amplification pulses
+  forcing_sign:
+    # +1 means the sine peak pushes "more hierarchy likely"; -1 flips the seasonal polarity
+    authority_coupling: +1
+
+authority_and_power:
+  # --- Three tenets background knobs ---
+  # Violence: increases exit friction / enforcement; too high kills reversals via lock-in.
+  violence_factor: 0.30
+
+  # Information: increases leader advantage / institutional persistence; also contributes to lock-in.
+  information_spread_rate: 0.30
+
+  # Charisma: implemented as festival-driven prestige amplification.
+  charisma_levels:
+    agents: 1.0
+
+  # --- Authority switch / leadership dynamics ---
+  authority_threshold: 1.0     # kappa0; higher => harder to trigger hierarchy
+  authority_steepness: 3.0     # gamma; higher => sharper on/off transitions
+
+  # Payoff/coordination shape parameters
+  benefit_scale: 2.0           # b0 baseline for aggregation benefit
+  cost_scale: 0.8              # c0 baseline for coordination cost
+  cost_exponent: 1.6           # phi > 1 for convex coordination
+
+  # Hierarchy economics
+  rent_scale: 0.4              # rho0 baseline rent for leader/elite
+  domination_tax: 0.6          # tau: disutility/cost of being in hierarchy (non-leader)
+
+  # Lock-in effects (persistence / exit friction)
+  lock_in_effects: true
+  exit_friction_base: 0.0
+  exit_friction_from_violence: 1.2
+  exit_friction_from_information: 1.2
+
+  # Prestige dynamics (memory)
+  memory_decay: 0.10           # higher => less persistence; helps reversibility
+  prestige_noise: 0.05
+
+runtime_and_reproducibility:
+  total_steps: 24000           # 200 "years" @ period 120
+  burn_in_period: 2400         # 20 years
+  random_seed: 1
+  logging_frequency: 1         # log every step for Phase 1 (can downsample later)
+
+observation:
+  metrics_to_log:
+    - frac_hier
+    - num_groups
+    - mean_group_size
+    - max_group_size
+    - gini_prestige
+    - festival
+    - crisis
+  aggregation_windows:
+    - 120      # per-season summaries (one "year")
+    - 600      # 5-year smoothing for plots
