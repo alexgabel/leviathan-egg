@@ -33,15 +33,52 @@ coordination needs, not as a fixed "winter = hierarchy" rule.
 
 ## 4. Project Phases and Deliverables
 
+### Phase Transition Note (Phase 1 → Phase 2)
+
+Phase 1 (Core Engine) is complete and frozen under the tag `phase1-complete`.
+All simulation dynamics, seasonal forcing, authority mechanisms, metrics,
+and the CLI runner are considered **stable**.
+
+Phase 2 operates strictly on top of the Phase‑1 engine and introduces:
+- No changes to agent dynamics or world update rules
+- No new social mechanisms or parameters
+- No multi‑patch interactions
+
+Any required changes to the core engine invalidate Phase‑2 results and must
+be deferred to a later phase.
+
 ### Phase 1 — Core Engine
 - Single-patch ABM
 - Reproducible runs (seeded)
 - Demonstrate 3 regimes
 
-### Phase 2 — Phase Diagram
-- Parameter sweeps
-- Reversal criterion
-- Regime classification
+### Phase 2 — Phase Diagram (current)
+
+Phase 2 focuses on systematic exploration of parameter space in a **single‑patch**
+world to identify and classify qualitative political regimes.
+
+Scope:
+- Parameter sweeps over:
+  - seasonal forcing amplitude and bias
+  - violence / exit friction
+  - information / memory lock‑in
+  - charisma / festival amplification
+- Long, seeded runs using the Phase‑1 engine
+- No modification of world dynamics
+
+Deliverables:
+- Operational regime definitions:
+  - Stable egalitarian
+  - Stable hierarchical
+  - Seasonal political reversal
+- Quantitative reversal criteria based on time‑series metrics
+- Phase diagrams over selected parameter axes
+- Representative time‑series figures
+
+Non‑goals (explicit):
+- No multi‑patch or synchronization analysis (Phase 3)
+- No network or hyperbolicity metrics (Phase 4)
+- No optimization, learning, or adaptive agents
 
 ### Phase 3 — Multi-Patch Desynchronization
 - Independent seasonal phases
