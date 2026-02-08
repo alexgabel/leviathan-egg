@@ -23,8 +23,13 @@ Thumbs.db
 .idea/
 
 # Experiment outputs (DO NOT TRACK)
-experiments/runs/
-experiments/**/runs/
+experiments/runs/*
+!experiments/runs/phase2/
+experiments/runs/phase2/*
+experiments/**/runs/*
+!experiments/runs/phase2/
+!experiments/runs/phase2/README.md
+!experiments/runs/phase2/.gitkeep
 results/
 outputs/
 figures/generated/
