@@ -125,6 +125,7 @@ class Observation:
 
 @dataclass(frozen=True)
 class Config:
+    schema_version: str
     meta: ExperimentMeta
     world_structure: WorldStructure
     seasonality: Seasonality
@@ -163,6 +164,7 @@ def load_config(path: str | Path) -> Config:
     _set_default(resolved, "description", "")
     _set_default(resolved, "author", "")
     _set_default(resolved, "date_created", "")
+    _set_default(resolved, "schema_version", "1.0")
 
     for section in REQUIRED_TOP_LEVEL_SECTIONS:
         resolved[section] = dict(_expect_mapping(resolved[section], where=f"root.{section}"))
@@ -266,6 +268,7 @@ def load_config(path: str | Path) -> Config:
     )
 
     return Config(
+        schema_version=str(resolved["schema_version"]),
         meta=meta,
         world_structure=world_structure,
         seasonality=seasonality,

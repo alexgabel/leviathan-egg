@@ -12,6 +12,7 @@ Configuration files must include the following fields, organized into thematic g
 - **description**: A concise summary of the experiment’s purpose and hypotheses.
 - **author**: Name(s) of the experimenter(s) or responsible party.
 - **date_created**: Date the configuration was authored or last modified.
+- **schema_version**: Config schema contract version for reproducibility tracking.
 
 ### World Structure
 
@@ -50,6 +51,16 @@ Configuration files must include the following fields, organized into thematic g
 
 Configurations must be self-contained descriptions of the simulation experiment and should not reference concepts related to training, learning, or optimization. The focus is on defining the initial conditions, parameters, and runtime behavior of the agent-based simulation itself.
 
+## Phase Contract Notes
+
+- Phase 2 is single-patch only and must not introduce new world dynamics.
+- Multi-patch settings are reserved for Phase 3 even though config fields already exist.
+- For Phase 2 sweeps, use:
+  - `experiments/configs/phase2/manifest_exploration.csv`
+  - `experiments/configs/phase2/manifest_confirmation.csv`
+- For Phase 2 regime classification thresholds, use:
+  - `experiments/configs/phase2/regime_thresholds.yaml`
+
 ## Example YAML Schema
 
 ```yaml
@@ -57,6 +68,7 @@ experiment_name:
 description:
 author:
 date_created:
+schema_version:
 
 world_structure:
   num_patches:

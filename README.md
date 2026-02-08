@@ -20,4 +20,8 @@ The repository is organized as follows:
 
 For a comprehensive overview of the project goals, scope, and alignment, please refer to the `PROJECT_SUMMARY.md` file, which serves as the authoritative guide.
 
+Current execution details for the active phase are documented in:
+- `paper/notes/phase2_protocol.md` (authoritative Phase 2 operating protocol)
+- `experiments/configs/phase2/README.md` (Phase 2 config and manifest contract)
+
 <!-- This research is intended for submission to the International Conference on Computational Social Science (ICCS) and will be prepared following the Lecture Notes in Computer Science (LNCS) format. -->

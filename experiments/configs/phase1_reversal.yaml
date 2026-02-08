@@ -5,6 +5,7 @@ description: >
   Strong periodic forcing, moderate lock-in (violence+information), reversible leadership.
 author: "Alex Gabel"
 date_created: "2026-01-27"
+schema_version: "1.0"
 
 world_structure:
   num_patches: 1

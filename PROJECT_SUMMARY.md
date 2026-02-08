@@ -57,6 +57,10 @@ be deferred to a later phase.
 Phase 2 focuses on systematic exploration of parameter space in a **single‑patch**
 world to identify and classify qualitative political regimes.
 
+Execution is explicitly two-stage:
+- Stage 1 (exploration): map broad regime structure and identify candidate reversal zones
+- Stage 2 (confirmation): replicate and densify only near candidate boundaries
+
 Scope:
 - Parameter sweeps over:
   - seasonal forcing amplitude and bias
@@ -65,20 +69,29 @@ Scope:
   - charisma / festival amplification
 - Long, seeded runs using the Phase‑1 engine
 - No modification of world dynamics
+- `world_structure.num_patches` and extra `seasonality.phase_offsets` fields are inert in
+  Phase 2 because only `patch_0` is simulated in the Phase‑1 world engine
 
 Deliverables:
 - Operational regime definitions:
   - Stable egalitarian
   - Stable hierarchical
   - Seasonal political reversal
+  - Uncertain / borderline
 - Quantitative reversal criteria based on time‑series metrics
 - Phase diagrams over selected parameter axes
 - Representative time‑series figures
+- Frozen Phase‑2 thresholds before bulk analysis
+- Reproducible run index and failure markers
 
 Non‑goals (explicit):
 - No multi‑patch or synchronization analysis (Phase 3)
 - No network or hyperbolicity metrics (Phase 4)
 - No optimization, learning, or adaptive agents
+
+Claim policy:
+- Stage 1 allowed claim: "reversals appear in a bounded region"
+- "Robustly" is only allowed after Stage 2 confirmation with explicit seed-based criteria
 
 ### Phase 3 — Multi-Patch Desynchronization
 - Independent seasonal phases
