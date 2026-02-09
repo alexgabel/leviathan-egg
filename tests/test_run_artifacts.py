@@ -86,6 +86,13 @@ def test_success_run_writes_contract_and_run_index(tmp_path):
     assert len(rows) == 1
     assert rows[0]["status"] == "SUCCESS"
     assert rows[0]["schema_version"] == "1.0"
+    assert rows[0]["metrics_path"] == str(run_dir / "metrics.csv")
+    assert rows[0]["config_resolved_path"] == str(run_dir / "config_resolved.yaml")
+    assert rows[0]["seed_path"] == str(run_dir / "seed.txt")
+    assert rows[0]["git_commit_path"] == str(run_dir / "git_commit.txt")
+    assert rows[0]["failed_marker_path"] == ""
+    assert "metrics:" in rows[0]["artifact_paths"]
+    assert "failed_marker:" not in rows[0]["artifact_paths"]
 
 
 def test_failed_run_writes_failed_marker_and_index(tmp_path):
@@ -105,3 +112,59 @@ def test_failed_run_writes_failed_marker_and_index(tmp_path):
         rows = list(csv.DictReader(f))
     assert len(rows) == 1
     assert rows[0]["status"] == "FAILED"
+    assert rows[0]["failed_marker_path"] == str(failed_file)
+    assert "failed_marker:" in rows[0]["artifact_paths"]
+
+
+def test_run_index_schema_migrates_forward(tmp_path):
+    run_root = tmp_path / "phase2"
+    run_root.mkdir(parents=True, exist_ok=True)
+    index_path = run_root / "run_index.csv"
+    old_fields = [
+        "run_id",
+        "config_path",
+        "seed",
+        "status",
+        "retry_count",
+        "start_time",
+        "end_time",
+        "git_commit",
+        "schema_version",
+        "run_dir",
+        "error",
+    ]
+    with index_path.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=old_fields)
+        writer.writeheader()
+        writer.writerow(
+            {
+                "run_id": "legacy_row",
+                "config_path": "legacy.yaml",
+                "seed": "1",
+                "status": "SUCCESS",
+                "retry_count": "0",
+                "start_time": "2026-01-01T00:00:00Z",
+                "end_time": "2026-01-01T00:01:00Z",
+                "git_commit": "abc",
+                "schema_version": "1.0",
+                "run_dir": "legacy",
+                "error": "",
+            }
+        )
+
+    config_path = tmp_path / "cfg_ok.yaml"
+    _write_config(config_path, agents=24)
+    run_simulation(config_path, run_root=run_root, max_retries=0)
+
+    with index_path.open("r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        rows = list(reader)
+        fieldnames = reader.fieldnames or []
+
+    assert len(rows) == 2
+    assert "metrics_path" in fieldnames
+    assert "config_resolved_path" in fieldnames
+    assert "artifact_paths" in fieldnames
+    assert rows[0]["run_id"] == "legacy_row"
+    assert rows[0]["metrics_path"] == "legacy/metrics.csv"
+    assert rows[0]["failed_marker_path"] == ""

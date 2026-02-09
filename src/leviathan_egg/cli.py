@@ -24,6 +24,73 @@ from leviathan_egg.metrics import collect_metrics
 from leviathan_egg.seasons import seasonal_terms
 from leviathan_egg.world import World
 
+RUN_INDEX_FIELDS = [
+    "run_id",
+    "config_path",
+    "seed",
+    "status",
+    "retry_count",
+    "start_time",
+    "end_time",
+    "git_commit",
+    "schema_version",
+    "run_dir",
+    "metrics_path",
+    "config_resolved_path",
+    "seed_path",
+    "git_commit_path",
+    "failed_marker_path",
+    "artifact_paths",
+    "error",
+]
+
+
+def _artifact_paths_from_run_dir(
+    run_dir: Path, *, include_failed_marker: bool
+) -> Dict[str, str]:
+    metrics_path = run_dir / "metrics.csv"
+    config_resolved_path = run_dir / "config_resolved.yaml"
+    seed_path = run_dir / "seed.txt"
+    git_commit_path = run_dir / "git_commit.txt"
+    failed_marker_path = run_dir / "FAILED.txt"
+
+    artifact_entries = [
+        f"metrics:{metrics_path}",
+        f"config_resolved:{config_resolved_path}",
+        f"seed:{seed_path}",
+        f"git_commit:{git_commit_path}",
+    ]
+    failed_marker_path_str = ""
+    if include_failed_marker:
+        failed_marker_path_str = str(failed_marker_path)
+        artifact_entries.append(f"failed_marker:{failed_marker_path}")
+
+    artifact_paths = "|".join(artifact_entries)
+    return {
+        "metrics_path": str(metrics_path),
+        "config_resolved_path": str(config_resolved_path),
+        "seed_path": str(seed_path),
+        "git_commit_path": str(git_commit_path),
+        "failed_marker_path": failed_marker_path_str,
+        "artifact_paths": artifact_paths,
+    }
+
+
+def _derive_artifact_backfill_values(run_dir_str: str, *, status: str) -> Dict[str, str]:
+    if not run_dir_str:
+        return {
+            "metrics_path": "",
+            "config_resolved_path": "",
+            "seed_path": "",
+            "git_commit_path": "",
+            "failed_marker_path": "",
+            "artifact_paths": "",
+        }
+    return _artifact_paths_from_run_dir(
+        Path(run_dir_str),
+        include_failed_marker=status == "FAILED",
+    )
+
 
 def _git_commit_hash() -> str:
     try:
@@ -55,26 +122,22 @@ def _append_run_index(
     git_commit: str,
     schema_version: str,
     run_dir: Path,
+    metrics_path: Path,
+    config_resolved_path: Path,
+    seed_path: Path,
+    git_commit_path: Path,
+    failed_marker_path: str,
+    artifact_paths: str,
     error: str,
 ) -> None:
     index_path.parent.mkdir(parents=True, exist_ok=True)
-    fieldnames = [
-        "run_id",
-        "config_path",
-        "seed",
-        "status",
-        "retry_count",
-        "start_time",
-        "end_time",
-        "git_commit",
-        "schema_version",
-        "run_dir",
-        "error",
-    ]
+
+    if index_path.exists() and index_path.stat().st_size > 0:
+        _migrate_run_index_schema(index_path)
 
     write_header = not index_path.exists() or index_path.stat().st_size == 0
     with index_path.open("a", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer = csv.DictWriter(f, fieldnames=RUN_INDEX_FIELDS)
         if write_header:
             writer.writeheader()
         writer.writerow(
@@ -89,9 +152,55 @@ def _append_run_index(
                 "git_commit": git_commit,
                 "schema_version": schema_version,
                 "run_dir": str(run_dir),
+                "metrics_path": str(metrics_path),
+                "config_resolved_path": str(config_resolved_path),
+                "seed_path": str(seed_path),
+                "git_commit_path": str(git_commit_path),
+                "failed_marker_path": failed_marker_path,
+                "artifact_paths": artifact_paths,
                 "error": error.strip().replace("\n", " | "),
             }
         )
+
+
+def backfill_run_index(index_path: Path) -> bool:
+    if not index_path.exists() or index_path.stat().st_size == 0:
+        return False
+
+    with index_path.open("r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        existing_rows = list(reader)
+        existing_fields = reader.fieldnames or []
+
+    changed = existing_fields != RUN_INDEX_FIELDS
+
+    migrated_rows = []
+    for row in existing_rows:
+        migrated = {field: row.get(field, "") for field in RUN_INDEX_FIELDS}
+        run_dir_str = (migrated.get("run_dir", "") or "").strip()
+        if run_dir_str:
+            derived = _derive_artifact_backfill_values(
+                run_dir_str,
+                status=(migrated.get("status", "") or "").strip().upper(),
+            )
+            for key, value in derived.items():
+                if migrated.get(key, "") != value:
+                    migrated[key] = value
+                    changed = True
+        migrated_rows.append(migrated)
+
+    if not changed:
+        return False
+
+    with index_path.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=RUN_INDEX_FIELDS)
+        writer.writeheader()
+        writer.writerows(migrated_rows)
+    return True
+
+
+def _migrate_run_index_schema(index_path: Path) -> None:
+    backfill_run_index(index_path)
 
 
 def _run_single_simulation(config_path: Path, run_dir: Path) -> int:
@@ -179,6 +288,10 @@ def run_simulation(
             _write_failed_marker(run_dir, attempt=attempt, error_text=error_text)
 
     end_time = datetime.utcnow().isoformat(timespec="seconds") + "Z"
+    artifact_fields = _artifact_paths_from_run_dir(
+        run_dir,
+        include_failed_marker=status == "FAILED",
+    )
     _append_run_index(
         run_root / "run_index.csv",
         run_id=run_id,
@@ -191,6 +304,12 @@ def run_simulation(
         git_commit=_git_commit_hash(),
         schema_version=cfg.schema_version,
         run_dir=run_dir,
+        metrics_path=Path(artifact_fields["metrics_path"]),
+        config_resolved_path=Path(artifact_fields["config_resolved_path"]),
+        seed_path=Path(artifact_fields["seed_path"]),
+        git_commit_path=Path(artifact_fields["git_commit_path"]),
+        failed_marker_path=artifact_fields["failed_marker_path"],
+        artifact_paths=artifact_fields["artifact_paths"],
         error=error_text,
     )
 

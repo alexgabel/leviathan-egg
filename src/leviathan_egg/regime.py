@@ -81,13 +81,94 @@ def classify_regime(
     thresholds: Optional[RegimeThresholds] = None,
 ) -> RegimeResult:
     th = thresholds or RegimeThresholds()
+    x = _validate_frac_hier(frac_hier, period_steps=period_steps)
+    states = x > th.tau
+    return _classify_with_states(
+        x=x,
+        states=states,
+        period_steps=period_steps,
+        seasonal_driver=seasonal_driver,
+        thresholds=th,
+    )
+
+
+def classify_regime_hysteresis(
+    frac_hier: Sequence[float],
+    *,
+    period_steps: int,
+    lower_tau: float,
+    upper_tau: float,
+    seasonal_driver: Optional[Sequence[float]] = None,
+    thresholds: Optional[RegimeThresholds] = None,
+) -> RegimeResult:
+    """
+    Classify regimes with Schmitt-trigger style binarization.
+
+    State transitions require crossing different thresholds:
+    - OFF -> ON only when frac_hier >= upper_tau
+    - ON -> OFF only when frac_hier <= lower_tau
+
+    This suppresses label brittleness from near-threshold jitter.
+    """
+    if not np.isfinite(lower_tau) or not np.isfinite(upper_tau):
+        raise ValueError("lower_tau/upper_tau must be finite")
+    if lower_tau >= upper_tau:
+        raise ValueError("lower_tau must be strictly less than upper_tau")
+    if lower_tau < 0.0 or upper_tau > 1.0:
+        raise ValueError("lower_tau/upper_tau must lie within [0, 1]")
+
+    th = thresholds or RegimeThresholds()
+    x = _validate_frac_hier(frac_hier, period_steps=period_steps)
+    states = _hysteresis_states(x, lower_tau=lower_tau, upper_tau=upper_tau)
+    return _classify_with_states(
+        x=x,
+        states=states,
+        period_steps=period_steps,
+        seasonal_driver=seasonal_driver,
+        thresholds=th,
+    )
+
+
+def _validate_frac_hier(frac_hier: Sequence[float], *, period_steps: int) -> np.ndarray:
     x = np.asarray(frac_hier, dtype=float)
     if x.ndim != 1 or x.size < 3:
         raise ValueError("frac_hier must be a 1D sequence with at least 3 points")
     if period_steps <= 0:
         raise ValueError("period_steps must be positive")
+    return x
 
-    states = x > th.tau
+
+def _hysteresis_states(x: np.ndarray, *, lower_tau: float, upper_tau: float) -> np.ndarray:
+    states = np.zeros(x.size, dtype=bool)
+    mid = 0.5 * (lower_tau + upper_tau)
+    if x[0] >= upper_tau:
+        state = True
+    elif x[0] <= lower_tau:
+        state = False
+    else:
+        state = bool(x[0] >= mid)
+
+    for i, v in enumerate(x):
+        if state:
+            if v <= lower_tau:
+                state = False
+        else:
+            if v >= upper_tau:
+                state = True
+        states[i] = state
+    return states
+
+
+def _classify_with_states(
+    *,
+    x: np.ndarray,
+    states: np.ndarray,
+    period_steps: int,
+    seasonal_driver: Optional[Sequence[float]],
+    thresholds: RegimeThresholds,
+) -> RegimeResult:
+    th = thresholds
+
     duty = float(states.mean())
     transitions = int(np.count_nonzero(states[1:] != states[:-1]))
     switch_rate = transitions / max(1, states.size - 1)

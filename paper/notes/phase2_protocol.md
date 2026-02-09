@@ -70,13 +70,15 @@ Show regime structure and identify reversal candidates.
 
 Deliverables:
 - labels for all runs
-- representative time-series plots
+- representative time-series plots (`frac_hier`, `festival`, `crisis`)
 - short interpretation notes
 
 Procedure:
 - freeze thresholds before bulk analysis
 - one pilot run allowed for threshold setting
 - representative runs selected by objective rule (for example highest confidence)
+- use `scripts/phase2_select_representative_plots.py` to enforce objective
+  selection and generate required series plots
 
 Exit criterion:
 At least one clean reversal candidate is documented.
@@ -90,6 +92,7 @@ Deliverables:
 - Stage 1 regime map (single-seed labels)
 - Stage 2 regime probability map (multi-seed)
 - uncertainty overlay (entropy/discord) for Stage 2 only
+- robustness verdict tables (`scripts/phase2_robustness_verdict.py`)
 
 Exit criterion:
 One publishable 2D slice with mechanism caption.
@@ -107,6 +110,19 @@ Deliverables:
 Exit criterion:
 Phase 2 stands on its own.
 
+## 1.G Strict Sanity Pass (Claim-Gating)
+
+Objective:
+Stress-test classifier-dependent claims before using "robustly" language.
+
+Required checks:
+- tau-ensemble stability table
+- hysteresis-variant relabeling check
+- strict boundary pass criterion (for example `min_cells_passing_boundary >= 3`)
+
+Exit criterion:
+Robust wording is allowed only if conclusions remain stable under these checks.
+
 ## 2. Claim Policy and Hard Stop
 
 Stage 1 allowed statement:
@@ -115,6 +131,7 @@ Stage 1 allowed statement:
 Stage 2 robust statement requires explicit criteria such as:
 - seed robustness (`>=4/5` seeds in local neighborhood), and
 - local perturbation stability around candidate cells.
+- report verdict tables that explicitly mark pass/fail cells and boundaries
 
 Hard stop:
 Phase 2 ends when bounded-region evidence is reproducible and documented.
