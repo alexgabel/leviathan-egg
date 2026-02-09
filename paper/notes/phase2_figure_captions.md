@@ -22,9 +22,13 @@ uncertainty appears as label-region transitions rather than within-cell noise.
 Stage 1 wording: "Seasonal reversals appear in a bounded region of parameter
 space."
 
-Stage 2 robust wording (scoped): "Under the tau=0.8 threshold profile, seasonal
-reversals emerge robustly in a bounded local neighborhood of parameter space
-around the identified transition boundaries."
+Stage 2 upgrade status: robust wording is not passed under strict sanity
+criteria; keep "appears" as the headline claim.
+
+Conditional/rejected wording record (not approved as headline): "Under the
+tau=0.8 threshold profile, seasonal reversals emerge robustly in a bounded
+local neighborhood of parameter space around the identified transition
+boundaries."
 
 Do not generalize the robust wording to the canonical tau=0.5 profile without
 matching replicated evidence.
