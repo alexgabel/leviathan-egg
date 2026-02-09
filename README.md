@@ -30,4 +30,7 @@ Phase 2 closure artifacts are archived at:
 - `paper/notes/phase2_sanity_pass.md`
 - `paper/notes/phase2_frozen_artifacts.sha256`
 
+Before Phase 3 implementation changes, verify the frozen Phase 2 baseline:
+- `python scripts/phase2_verify_frozen_artifacts.py`
+
 <!-- This research is intended for submission to the International Conference on Computational Social Science (ICCS) and will be prepared following the Lecture Notes in Computer Science (LNCS) format. -->

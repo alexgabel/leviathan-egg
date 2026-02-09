@@ -211,6 +211,9 @@ def _run_single_simulation(config_path: Path, run_dir: Path) -> int:
 
     total_steps = cfg.runtime_and_reproducibility.total_steps
     burn_in = cfg.runtime_and_reproducibility.burn_in_period
+    include_phase3_metrics = bool(
+        cfg.world_structure.num_patches > 1 and cfg.inter_patch_coupling.enabled
+    )
 
     rows: List[Dict[str, float]] = []
 
@@ -219,7 +222,11 @@ def _run_single_simulation(config_path: Path, run_dir: Path) -> int:
         world.step(t)
 
         if t >= burn_in:
-            metrics = collect_metrics(world, season=season)
+            metrics = collect_metrics(
+                world,
+                season=season,
+                include_phase3_scaffolding=include_phase3_metrics,
+            )
             metrics["t"] = float(t)
             rows.append(metrics)
 

@@ -31,6 +31,10 @@ REQUIRED_TOP_LEVEL_SECTIONS = (
     "observation",
 )
 
+ALLOWED_COUPLING_MODES = ("none", "mean_field", "pairwise")
+ALLOWED_COUPLING_TOPOLOGIES = ("all_to_all", "ring")
+ALLOWED_COUPLING_TARGET_METRICS = ("frac_hier",)
+
 
 def _expect_mapping(obj: Any, *, where: str) -> Mapping[str, Any]:
     if not isinstance(obj, Mapping):
@@ -55,6 +59,99 @@ def _deep_copy(obj: Any) -> Any:
 def _set_default(d: Dict[str, Any], key: str, value: Any) -> None:
     if key not in d:
         d[key] = value
+
+
+def _validate_phase_offsets(phase_offsets: Mapping[str, Any], *, num_patches: int) -> None:
+    required = [f"patch_{i}" for i in range(num_patches)]
+    missing = [k for k in required if k not in phase_offsets]
+    if missing:
+        raise ConfigError(
+            "Missing required seasonality.phase_offsets key(s) for num_patches="
+            f"{num_patches}: {', '.join(missing)}"
+        )
+
+
+def _validate_inter_patch_coupling(
+    ic: Mapping[str, Any], *, num_patches: int
+) -> None:
+    if not isinstance(ic["enabled"], bool):
+        raise ConfigError("root.inter_patch_coupling.enabled must be boolean")
+    if not isinstance(ic["normalize_by_degree"], bool):
+        raise ConfigError(
+            "root.inter_patch_coupling.normalize_by_degree must be boolean"
+        )
+
+    mode = str(ic["mode"])
+    if mode not in ALLOWED_COUPLING_MODES:
+        raise ConfigError(
+            "root.inter_patch_coupling.mode must be one of "
+            f"{ALLOWED_COUPLING_MODES}; got {mode!r}"
+        )
+
+    topology = str(ic["topology"])
+    if topology not in ALLOWED_COUPLING_TOPOLOGIES:
+        raise ConfigError(
+            "root.inter_patch_coupling.topology must be one of "
+            f"{ALLOWED_COUPLING_TOPOLOGIES}; got {topology!r}"
+        )
+
+    target_metric = str(ic["target_metric"])
+    if target_metric not in ALLOWED_COUPLING_TARGET_METRICS:
+        raise ConfigError(
+            "root.inter_patch_coupling.target_metric must be one of "
+            f"{ALLOWED_COUPLING_TARGET_METRICS}; got {target_metric!r}"
+        )
+
+    try:
+        strength = float(ic["strength"])
+    except (TypeError, ValueError) as e:
+        raise ConfigError(
+            "root.inter_patch_coupling.strength must be numeric"
+        ) from e
+    if not (0.0 <= strength <= 1.0):
+        raise ConfigError(
+            "root.inter_patch_coupling.strength must be in [0, 1]"
+        )
+
+    try:
+        sign = int(ic["sign"])
+    except (TypeError, ValueError) as e:
+        raise ConfigError("root.inter_patch_coupling.sign must be integer") from e
+    if sign not in (-1, 0, 1):
+        raise ConfigError("root.inter_patch_coupling.sign must be one of -1, 0, 1")
+
+    try:
+        lag_steps = int(ic["lag_steps"])
+    except (TypeError, ValueError) as e:
+        raise ConfigError(
+            "root.inter_patch_coupling.lag_steps must be integer"
+        ) from e
+    if lag_steps < 0:
+        raise ConfigError("root.inter_patch_coupling.lag_steps must be >= 0")
+
+    enabled = bool(ic["enabled"])
+    if enabled:
+        if num_patches < 2:
+            raise ConfigError(
+                "root.inter_patch_coupling.enabled=true requires world_structure.num_patches >= 2"
+            )
+        if mode == "none":
+            raise ConfigError(
+                "root.inter_patch_coupling.enabled=true requires mode != 'none'"
+            )
+        if strength <= 0.0:
+            raise ConfigError(
+                "root.inter_patch_coupling.enabled=true requires strength > 0"
+            )
+    else:
+        if mode != "none":
+            raise ConfigError(
+                "root.inter_patch_coupling.enabled=false requires mode='none'"
+            )
+        if strength != 0.0:
+            raise ConfigError(
+                "root.inter_patch_coupling.enabled=false requires strength=0.0"
+            )
 
 
 # ---------------------------------------------------------------------
@@ -124,6 +221,18 @@ class Observation:
 
 
 @dataclass(frozen=True)
+class InterPatchCoupling:
+    enabled: bool
+    mode: str
+    topology: str
+    strength: float
+    sign: int
+    lag_steps: int
+    normalize_by_degree: bool
+    target_metric: str
+
+
+@dataclass(frozen=True)
 class Config:
     schema_version: str
     meta: ExperimentMeta
@@ -132,6 +241,7 @@ class Config:
     authority_and_power: AuthorityAndPower
     runtime_and_reproducibility: RuntimeAndReproducibility
     observation: Observation
+    inter_patch_coupling: InterPatchCoupling
     resolved: Dict[str, Any]
 
     def to_resolved_dict(self) -> Dict[str, Any]:
@@ -165,14 +275,27 @@ def load_config(path: str | Path) -> Config:
     _set_default(resolved, "author", "")
     _set_default(resolved, "date_created", "")
     _set_default(resolved, "schema_version", "1.0")
+    _set_default(resolved, "inter_patch_coupling", {})
 
     for section in REQUIRED_TOP_LEVEL_SECTIONS:
         resolved[section] = dict(_expect_mapping(resolved[section], where=f"root.{section}"))
+    resolved["inter_patch_coupling"] = dict(
+        _expect_mapping(
+            resolved["inter_patch_coupling"],
+            where="root.inter_patch_coupling",
+        )
+    )
 
     # World structure
     ws = resolved["world_structure"]
     _require_keys(ws, ("num_patches", "population_sizes"), where="root.world_structure")
     _set_default(ws, "environmental_parameters", {})
+    try:
+        num_patches = int(ws["num_patches"])
+    except (TypeError, ValueError) as e:
+        raise ConfigError("root.world_structure.num_patches must be integer") from e
+    if num_patches < 1:
+        raise ConfigError("root.world_structure.num_patches must be >= 1")
 
     # Seasonality
     se = resolved["seasonality"]
@@ -181,6 +304,18 @@ def load_config(path: str | Path) -> Config:
         ("seasonal_period", "phase_offsets", "forcing_amplitudes", "forcing_sign"),
         where="root.seasonality",
     )
+    se["phase_offsets"] = dict(
+        _expect_mapping(se["phase_offsets"], where="root.seasonality.phase_offsets")
+    )
+    se["forcing_amplitudes"] = dict(
+        _expect_mapping(
+            se["forcing_amplitudes"], where="root.seasonality.forcing_amplitudes"
+        )
+    )
+    se["forcing_sign"] = dict(
+        _expect_mapping(se["forcing_sign"], where="root.seasonality.forcing_sign")
+    )
+    _validate_phase_offsets(se["phase_offsets"], num_patches=num_patches)
 
     # Authority & power
     ap = resolved["authority_and_power"]
@@ -213,6 +348,18 @@ def load_config(path: str | Path) -> Config:
     ob = resolved["observation"]
     _require_keys(ob, ("metrics_to_log", "aggregation_windows"), where="root.observation")
 
+    # Inter-patch coupling (Phase 3 scaffolding)
+    ic = resolved["inter_patch_coupling"]
+    _set_default(ic, "enabled", False)
+    _set_default(ic, "mode", "none")
+    _set_default(ic, "topology", "all_to_all")
+    _set_default(ic, "strength", 0.0)
+    _set_default(ic, "sign", 1)
+    _set_default(ic, "lag_steps", 0)
+    _set_default(ic, "normalize_by_degree", True)
+    _set_default(ic, "target_metric", "frac_hier")
+    _validate_inter_patch_coupling(ic, num_patches=num_patches)
+
     # -----------------------------------------------------------------
     # Typed objects
     # -----------------------------------------------------------------
@@ -224,7 +371,7 @@ def load_config(path: str | Path) -> Config:
     )
 
     world_structure = WorldStructure(
-        num_patches=int(ws["num_patches"]),
+        num_patches=num_patches,
         population_sizes={k: int(v) for k, v in ws["population_sizes"].items()},
         environmental_parameters=dict(ws["environmental_parameters"]),
     )
@@ -267,6 +414,17 @@ def load_config(path: str | Path) -> Config:
         aggregation_windows=[int(x) for x in ob["aggregation_windows"]],
     )
 
+    inter_patch_coupling = InterPatchCoupling(
+        enabled=bool(ic["enabled"]),
+        mode=str(ic["mode"]),
+        topology=str(ic["topology"]),
+        strength=float(ic["strength"]),
+        sign=int(ic["sign"]),
+        lag_steps=int(ic["lag_steps"]),
+        normalize_by_degree=bool(ic["normalize_by_degree"]),
+        target_metric=str(ic["target_metric"]),
+    )
+
     return Config(
         schema_version=str(resolved["schema_version"]),
         meta=meta,
@@ -275,5 +433,6 @@ def load_config(path: str | Path) -> Config:
         authority_and_power=authority_and_power,
         runtime_and_reproducibility=runtime_and_reproducibility,
         observation=observation,
+        inter_patch_coupling=inter_patch_coupling,
         resolved=resolved,
     )
