@@ -52,7 +52,7 @@ be deferred to a later phase.
 - Reproducible runs (seeded)
 - Demonstrate 3 regimes
 
-### Phase 2 — Phase Diagram (current)
+### Phase 2 — Phase Diagram (closed; results frozen)
 
 Phase 2 focuses on systematic exploration of parameter space in a **single‑patch**
 world to identify and classify qualitative political regimes.
@@ -91,9 +91,10 @@ Non‑goals (explicit):
 
 Claim policy:
 - Stage 1 allowed claim: "reversals appear in a bounded region"
-- "Robustly" is only allowed after Stage 2 confirmation with explicit seed-based criteria
+- classifier-invariant "robustly" upgrade is not passed under strict sanity criteria
+- frozen artifact manifest: `paper/notes/phase2_frozen_artifacts.sha256`
 
-### Phase 3 — Multi-Patch Desynchronization
+### Phase 3 — Multi-Patch Desynchronization (current kickoff)
 - Independent seasonal phases
 - Signed seasonal coupling
 - Synchrony metrics

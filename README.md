@@ -20,8 +20,14 @@ The repository is organized as follows:
 
 For a comprehensive overview of the project goals, scope, and alignment, please refer to the `PROJECT_SUMMARY.md` file, which serves as the authoritative guide.
 
-Current execution details for the active phase are documented in:
-- `paper/notes/phase2_protocol.md` (authoritative Phase 2 operating protocol)
-- `experiments/configs/phase2/README.md` (Phase 2 config and manifest contract)
+Current execution details are documented in:
+- `paper/notes/phase3_kickoff.md` (current Phase 3 kickoff and implementation slice)
+- `paper/notes/phase3_design.md` (Phase 3 design and acceptance tests)
+- `experiments/configs/phase3/README.md` (Phase 3 config contract)
+
+Phase 2 closure artifacts are archived at:
+- `paper/notes/phase2_results_draft.md`
+- `paper/notes/phase2_sanity_pass.md`
+- `paper/notes/phase2_frozen_artifacts.sha256`
 
 <!-- This research is intended for submission to the International Conference on Computational Social Science (ICCS) and will be prepared following the Lecture Notes in Computer Science (LNCS) format. -->

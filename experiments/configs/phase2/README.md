@@ -129,26 +129,26 @@ Generate confirmation cells/configs from tau=0.8 boundary selection:
 Run confirmation batch:
 - `.venv/bin/python scripts/phase2_run_manifest.py --manifest experiments/configs/phase2/manifest_confirmation.csv --stage confirmation --run-root experiments/runs/phase2/confirmation_tau08 --max-retries 1`
 
-## Near-Crossing Refinement (Final Robustness)
+## Near-Crossing Refinement (Final Claim-Gating Runset)
 
 Generate refinement configs/manifest near the measured transition with 5 seeds per cell:
-- `.venv/bin/python scripts/phase2_generate_confirmation_refine.py --boundary-csv experiments/configs/phase2/boundary_cells_auto_tau08.csv --transition-summary experiments/runs/phase2/confirmation_dense_tau08/transition_summary_tau08.csv --alphas 0.45,0.50,0.55 --replicates 5 --manifest-out experiments/configs/phase2/manifest_confirmation_refine.csv --config-prefix phase2r_tau08 --seed-base 6101 --threshold-profile-note regime_thresholds_tau08_sensitivity.yaml`
+- `.venv/bin/python scripts/phase2_generate_confirmation_refine.py --boundary-csv experiments/configs/phase2/boundary_cells_auto_tau08.csv --transition-summary experiments/runs/phase2/confirmation_dense_tau08/transition_summary_tau08.csv --alphas 0.35,0.38,0.40,0.42,0.44 --replicates 5 --manifest-out experiments/configs/phase2/manifest_confirmation_refine_low.csv --config-prefix phase2r_tau08_low --seed-base 7101 --threshold-profile-note regime_thresholds_tau08_sensitivity.yaml`
 
 Run the refinement manifest:
-- `.venv/bin/python scripts/phase2_run_manifest.py --manifest experiments/configs/phase2/manifest_confirmation_refine.csv --stage confirmation --run-root experiments/runs/phase2/confirmation_refine_tau08 --max-retries 1`
+- `.venv/bin/python scripts/phase2_run_manifest.py --manifest experiments/configs/phase2/manifest_confirmation_refine_low.csv --stage confirmation --run-root experiments/runs/phase2/confirmation_refine_low_tau08 --max-retries 1`
 
 Label + prepare analysis tables:
-- `.venv/bin/python scripts/phase2_label_runs.py --run-root experiments/runs/phase2/confirmation_refine_tau08 --thresholds experiments/configs/phase2/regime_thresholds_tau08_sensitivity.yaml --output experiments/runs/phase2/confirmation_refine_tau08/regime_labels_tau08.csv`
-- `.venv/bin/python scripts/phase2_prepare_analysis.py --run-root experiments/runs/phase2/confirmation_refine_tau08 --labels experiments/runs/phase2/confirmation_refine_tau08/regime_labels_tau08.csv --manifest experiments/configs/phase2/manifest_confirmation_refine.csv --latest-output experiments/runs/phase2/confirmation_refine_tau08/analysis_latest_per_config_tau08.csv --block-output experiments/runs/phase2/confirmation_refine_tau08/analysis_full_block_tau08.csv`
+- `.venv/bin/python scripts/phase2_label_runs.py --run-root experiments/runs/phase2/confirmation_refine_low_tau08 --thresholds experiments/configs/phase2/regime_thresholds_tau08_sensitivity.yaml --output experiments/runs/phase2/confirmation_refine_low_tau08/regime_labels_tau08.csv`
+- `.venv/bin/python scripts/phase2_prepare_analysis.py --run-root experiments/runs/phase2/confirmation_refine_low_tau08 --labels experiments/runs/phase2/confirmation_refine_low_tau08/regime_labels_tau08.csv --manifest experiments/configs/phase2/manifest_confirmation_refine_low.csv --latest-output experiments/runs/phase2/confirmation_refine_low_tau08/analysis_latest_per_config_tau08.csv --block-output experiments/runs/phase2/confirmation_refine_low_tau08/analysis_full_block_tau08.csv`
 
-Robustness verdict tables (claim governance for Stage 2):
-- `.venv/bin/python scripts/phase2_robustness_verdict.py --analysis-csv experiments/runs/phase2/confirmation_refine_tau08/analysis_latest_per_config_tau08.csv --target-label reversal --min-successes 4 --min-replicates 5 --cells-output experiments/runs/phase2/confirmation_refine_tau08/robustness_cells_tau08.csv --boundaries-output experiments/runs/phase2/confirmation_refine_tau08/robustness_boundaries_tau08.csv`
+Stage 2 verdict tables (claim governance input):
+- `.venv/bin/python scripts/phase2_robustness_verdict.py --analysis-csv experiments/runs/phase2/confirmation_refine_low_tau08/analysis_latest_per_config_tau08.csv --target-label reversal --min-successes 4 --min-replicates 5 --cells-output experiments/runs/phase2/confirmation_refine_low_tau08/robustness_cells_tau08.csv --boundaries-output experiments/runs/phase2/confirmation_refine_low_tau08/robustness_boundaries_tau08.csv`
 
 Generate Stage 2 figure-input tables (probability + uncertainty overlays):
-- `.venv/bin/python scripts/phase2_stage2_figure_inputs.py --cells-csv experiments/runs/phase2/confirmation_refine_tau08/robustness_cells_tau08.csv --boundaries-csv experiments/runs/phase2/confirmation_refine_tau08/robustness_boundaries_tau08.csv --probability-output experiments/runs/phase2/confirmation_refine_tau08/stage2_probability_map_tau08.csv --uncertainty-output experiments/runs/phase2/confirmation_refine_tau08/stage2_uncertainty_overlay_tau08.csv`
+- `.venv/bin/python scripts/phase2_stage2_figure_inputs.py --cells-csv experiments/runs/phase2/confirmation_refine_low_tau08/robustness_cells_tau08.csv --boundaries-csv experiments/runs/phase2/confirmation_refine_low_tau08/robustness_boundaries_tau08.csv --probability-output experiments/runs/phase2/confirmation_refine_low_tau08/stage2_probability_map_tau08.csv --uncertainty-output experiments/runs/phase2/confirmation_refine_low_tau08/stage2_uncertainty_overlay_tau08.csv`
 
 Render final Stage 2 map figures (2.E):
-- `.venv/bin/python scripts/phase2_plot_stage2_maps.py --probability-csv experiments/runs/phase2/confirmation_refine_tau08/stage2_probability_map_tau08.csv --uncertainty-csv experiments/runs/phase2/confirmation_refine_tau08/stage2_uncertainty_overlay_tau08.csv --heatmap-out experiments/runs/phase2/confirmation_refine_tau08/fig_stage2_probability_heatmap_tau08.png --overlay-out experiments/runs/phase2/confirmation_refine_tau08/fig_stage2_entropy_discord_overlay_tau08.png`
+- `.venv/bin/python scripts/phase2_plot_stage2_maps.py --probability-csv experiments/runs/phase2/confirmation_refine_low_tau08/stage2_probability_map_tau08.csv --uncertainty-csv experiments/runs/phase2/confirmation_refine_low_tau08/stage2_uncertainty_overlay_tau08.csv --heatmap-out experiments/runs/phase2/confirmation_refine_low_tau08/fig_stage2_probability_heatmap_tau08.png --overlay-out experiments/runs/phase2/confirmation_refine_low_tau08/fig_stage2_entropy_discord_overlay_tau08.png`
 
 ## Strict Sanity Pass (Before "Robustly" Language)
 

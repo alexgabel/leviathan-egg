@@ -1,6 +1,6 @@
 # Phase 2 Protocol — Regime Mapping and Phase Diagram
 
-Status: Active
+Status: Closed (Archived on 2026-02-09; retained for reproducibility/audit)
 
 Scientific goal:
 Demonstrate that seasonal political reversals appear in a bounded, interpretable
