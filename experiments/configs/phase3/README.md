@@ -41,6 +41,39 @@ M2 gate command (must be green before exploratory Phase 3 runs):
 - explicit patch-level seasonal phase offsets
 - declared synchrony hypothesis per config
 
+## Output Contract (Phase 3)
+
+Multi-patch runs (`num_patches > 1`) emit synchrony outputs in `metrics.csv`:
+- `synchrony_order_parameter`
+- `synchrony_phase_lock_fraction`
+- `synchrony_mean_abs_phase_lag`
+- `frac_hier_patch_<patch_id>` per patch
+
+## Stage-1 Exploration Manifest
+
+- `experiments/configs/phase3/manifest_stage1_exploration.csv`
+- 24-row factorial (`phase_profile` x `topology` x `coupling_sign` x `coupling_strength`)
+- One seed per row (5101-5124), `stage=exploration`
+
+## Execution Workflow
+
+1. Generate/refresh YAMLs from manifest:
+- `python scripts/phase3_generate_configs.py --manifest experiments/configs/phase3/manifest_stage1_exploration.csv --stage exploration`
+
+2. Run Stage-1 exploration:
+- `python scripts/phase3_run_manifest.py --manifest experiments/configs/phase3/manifest_stage1_exploration.csv --stage exploration --run-root experiments/runs/phase3/exploration_stage1 --max-retries 1`
+
+3. Build Stage-1 analysis table (artifact-derived thresholds):
+- `python scripts/phase3_prepare_analysis.py --run-root experiments/runs/phase3/exploration_stage1 --manifest experiments/configs/phase3/manifest_stage1_exploration.csv --latest-output experiments/runs/phase3/exploration_stage1/analysis_latest_per_config.csv --block-output experiments/runs/phase3/exploration_stage1/analysis_full_grid_block.csv --label-mode quantile --quantile-lo 0.25 --quantile-hi 0.75 --thresholds-output experiments/runs/phase3/exploration_stage1/analysis_thresholds_quantile.csv`
+
+4. Generate Stage-2 boundary confirmation manifest:
+- `python scripts/phase3_generate_confirmation.py --analysis-csv experiments/runs/phase3/exploration_stage1/analysis_latest_per_config.csv --manifest-out experiments/configs/phase3/manifest_confirmation.csv --boundary-out experiments/configs/phase3/boundary_cells_auto.csv --replicates 5 --seed-base 6101`
+- If `boundaries=0`, rerun step 3 with `--label-mode quantile` (or wider `--quantile-lo/--quantile-hi`) and regenerate.
+
+5. Generate Stage-2 YAMLs + run confirmation:
+- `python scripts/phase3_generate_configs.py --manifest experiments/configs/phase3/manifest_confirmation.csv --stage confirmation`
+- `python scripts/phase3_run_manifest.py --manifest experiments/configs/phase3/manifest_confirmation.csv --stage confirmation --run-root experiments/runs/phase3/confirmation_stage2 --max-retries 1`
+
 ## Invariants
 
 - retain reproducibility contract (config, seed, commit, metrics)

@@ -211,9 +211,9 @@ def _run_single_simulation(config_path: Path, run_dir: Path) -> int:
 
     total_steps = cfg.runtime_and_reproducibility.total_steps
     burn_in = cfg.runtime_and_reproducibility.burn_in_period
-    include_phase3_metrics = bool(
-        cfg.world_structure.num_patches > 1 and cfg.inter_patch_coupling.enabled
-    )
+    # Emit Phase 3 per-patch/synchrony outputs for any multi-patch run.
+    # Single-patch runs retain historical metric schema.
+    include_phase3_metrics = bool(cfg.world_structure.num_patches > 1)
 
     rows: List[Dict[str, float]] = []
 

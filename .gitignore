@@ -24,6 +24,7 @@ Thumbs.db
 
 # Experiment outputs (DO NOT TRACK)
 experiments/configs/phase2/*
+experiments/configs/phase3/*
 experiments/runs/*
 !experiments/runs/phase2/
 experiments/runs/phase2/*
