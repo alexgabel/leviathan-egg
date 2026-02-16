@@ -106,5 +106,6 @@ def test_run_emits_synchrony_outputs_for_multi_patch(tmp_path):
         "synchrony_order_parameter",
         "synchrony_phase_lock_fraction",
         "synchrony_mean_abs_phase_lag",
+        "synchrony_antiphase_fraction",
     }
     assert expected_fields.issubset(set(fieldnames))

@@ -64,12 +64,19 @@ def _float_series(metric_rows: List[Dict[str, str]], key: str) -> np.ndarray:
     return np.asarray(vals, dtype=float)
 
 
+def _fmt(value: float) -> str:
+    return "" if np.isnan(value) else f"{value:.6f}"
+
+
 def _summary_from_metrics(metric_rows: List[Dict[str, str]]) -> Dict[str, float] | None:
     order = _float_series(metric_rows, "synchrony_order_parameter")
     lock = _float_series(metric_rows, "synchrony_phase_lock_fraction")
     lag = _float_series(metric_rows, "synchrony_mean_abs_phase_lag")
+    antiphase = _float_series(metric_rows, "synchrony_antiphase_fraction")
     if order.size == 0 or lock.size == 0 or lag.size == 0:
         return None
+    anti_mean = float(np.mean(antiphase)) if antiphase.size else float(np.nan)
+    anti_std = float(np.std(antiphase)) if antiphase.size else float(np.nan)
     return {
         "sync_order_mean": float(np.mean(order)),
         "sync_order_std": float(np.std(order)),
@@ -77,6 +84,8 @@ def _summary_from_metrics(metric_rows: List[Dict[str, str]]) -> Dict[str, float]
         "sync_lock_std": float(np.std(lock)),
         "sync_lag_mean": float(np.mean(lag)),
         "sync_lag_std": float(np.std(lag)),
+        "sync_antiphase_mean": anti_mean,
+        "sync_antiphase_std": anti_std,
     }
 
 
@@ -184,6 +193,8 @@ def _join(
                 "sync_lock_std": f"{summary['sync_lock_std']:.6f}",
                 "sync_lag_mean": f"{summary['sync_lag_mean']:.6f}",
                 "sync_lag_std": f"{summary['sync_lag_std']:.6f}",
+                "sync_antiphase_mean": _fmt(summary["sync_antiphase_mean"]),
+                "sync_antiphase_std": _fmt(summary["sync_antiphase_std"]),
                 "sweep_axis": manifest.get("sweep_axis", ""),
                 "sweep_value": manifest.get("sweep_value", ""),
                 "hypothesis": manifest.get("hypothesis", ""),
@@ -353,6 +364,8 @@ def main() -> None:
         "sync_lock_std",
         "sync_lag_mean",
         "sync_lag_std",
+        "sync_antiphase_mean",
+        "sync_antiphase_std",
         "sweep_axis",
         "sweep_value",
         "hypothesis",

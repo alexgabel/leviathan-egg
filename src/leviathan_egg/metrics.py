@@ -20,6 +20,7 @@ PHASE3_SYNCHRONY_KEYS = (
     "synchrony_order_parameter",
     "synchrony_phase_lock_fraction",
     "synchrony_mean_abs_phase_lag",
+    "synchrony_antiphase_fraction",
 )
 # Back-compat alias used by existing tests/docs.
 PHASE3_SYNCHRONY_PLACEHOLDER_KEYS = (
@@ -122,6 +123,8 @@ def synchrony_metrics(world: World) -> Dict[str, float]:
     - synchrony_order_parameter: circular concentration of current patch hierarchy phases
     - synchrony_phase_lock_fraction: share of patch-pairs with small phase distance
     - synchrony_mean_abs_phase_lag: mean absolute best cross-correlation lag (steps)
+    - synchrony_antiphase_fraction: share of patch-pairs with negative correlation
+      across recent hierarchy histories
     """
     by_patch = frac_hier_by_patch(world)
     patch_ids = sorted(by_patch.keys())
@@ -131,6 +134,7 @@ def synchrony_metrics(world: World) -> Dict[str, float]:
             "synchrony_order_parameter": 1.0,
             "synchrony_phase_lock_fraction": 1.0,
             "synchrony_mean_abs_phase_lag": 0.0,
+            "synchrony_antiphase_fraction": 0.0,
             "synchrony_placeholder_flag": 0.0,
         }
 
@@ -154,6 +158,7 @@ def synchrony_metrics(world: World) -> Dict[str, float]:
     max_lag = max(1, period // 4)
     window = max(period, 4 * max_lag)
     abs_lags = []
+    pair_corrs = []
     for i in range(n):
         for j in range(i + 1, n):
             hi = np.asarray(world.patch_hierarchy_history(patch_ids[i], window=window), dtype=float)
@@ -163,6 +168,11 @@ def synchrony_metrics(world: World) -> Dict[str, float]:
                 continue
             hi = hi[-m:] - np.mean(hi[-m:])
             hj = hj[-m:] - np.mean(hj[-m:])
+
+            denom = float(np.linalg.norm(hi) * np.linalg.norm(hj))
+            corr_zero_lag = float(np.dot(hi, hj) / denom) if denom > 1e-12 else 0.0
+            pair_corrs.append(corr_zero_lag)
+
             corr = np.correlate(hi, hj, mode="full")
             lags = np.arange(-m + 1, m)
             mask = np.abs(lags) <= max_lag
@@ -171,11 +181,18 @@ def synchrony_metrics(world: World) -> Dict[str, float]:
             best_lag = int(lags[mask][int(np.argmax(corr[mask]))])
             abs_lags.append(abs(best_lag))
     mean_abs_phase_lag = float(np.mean(abs_lags)) if abs_lags else 0.0
+    anti_phase_threshold = -0.2
+    antiphase_fraction = (
+        float(np.mean([1.0 if c <= anti_phase_threshold else 0.0 for c in pair_corrs]))
+        if pair_corrs
+        else 0.0
+    )
 
     return {
         "synchrony_order_parameter": order_parameter,
         "synchrony_phase_lock_fraction": phase_lock_fraction,
         "synchrony_mean_abs_phase_lag": mean_abs_phase_lag,
+        "synchrony_antiphase_fraction": antiphase_fraction,
         "synchrony_placeholder_flag": 0.0,
     }
 

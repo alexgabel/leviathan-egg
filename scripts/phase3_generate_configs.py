@@ -113,7 +113,8 @@ def _build_config(
     )
 
     seed = _as_int(str(row["seed"]), where="seed")
-    cfg["runtime_and_reproducibility"]["random_seed"] = seed
+    rr = cfg["runtime_and_reproducibility"]
+    rr["random_seed"] = seed
 
     num_patches = _infer_num_patches(params)
     cfg["world_structure"]["num_patches"] = num_patches
@@ -133,6 +134,19 @@ def _build_config(
     lag_steps = _as_int(params.get("lag_steps", "0"), where="lag_steps")
     normalize_by_degree = _as_bool(params.get("normalize_by_degree", "true"))
     target_metric = params.get("target_metric", "frac_hier")
+
+    total_steps_raw = params.get("total_steps")
+    burn_in_raw = params.get("burn_in_period")
+    if total_steps_raw is not None:
+        old_total_steps = int(rr["total_steps"])
+        old_burn_in = int(rr["burn_in_period"])
+        total_steps = _as_int(total_steps_raw, where="total_steps")
+        rr["total_steps"] = total_steps
+        if burn_in_raw is None and old_total_steps > 0:
+            scaled = int(round((old_burn_in / old_total_steps) * total_steps))
+            rr["burn_in_period"] = max(1, scaled)
+    if burn_in_raw is not None:
+        rr["burn_in_period"] = _as_int(burn_in_raw, where="burn_in_period")
 
     enabled = bool(strength > 0.0)
     if not enabled:

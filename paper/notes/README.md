@@ -18,4 +18,6 @@ Current files:
 - `phase2_frozen_artifacts.sha256`: frozen artifact hash manifest
 - `phase3_design.md`: pre-implementation Phase 3 design and acceptance tests
 - `phase3_kickoff.md`: active Phase 3 kickoff plan and first implementation slice
+- `phase3_results_draft.md`: Phase 3 classifier-versioned results and claim governance
+- `phase3_figure_captions.md`: publication-ready Phase 3 captions with v1/v2 claim lock
 - `phase4_design.md`: pre-implementation Phase 4 design and acceptance tests
