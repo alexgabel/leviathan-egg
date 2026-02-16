@@ -16,6 +16,21 @@ No retroactive Phase-2 claim edits are allowed during Phase 3 implementation.
 Preflight check before Phase 3 changes:
 - `python scripts/phase2_verify_frozen_artifacts.py`
 
+## Claim Language Lock (Must Match Notes)
+
+Headline claim (v1, conservative):
+- "Negative coupling yields persistent anti-phase/boundary regimes; robust desynchrony is not established under strict lag-gated criteria (classifier v1)."
+
+Conditional v2 claim (allowed only when fully scoped):
+- "Under classifier v2 (anti-phase-inclusive), robust desynchrony is supported only under the frozen threshold profile `experiments/configs/phase3/desync_v2_thresholds.yaml` and only within the reported anti-phase sensitivity window (`0.920` to `0.939` in `experiments/runs/phase3/desync_refine_lag8_fine/sensitivity_antiphase_threshold.csv`)."
+
+Governance requirements:
+- Any "robust desynchrony" wording must name classifier version (`v1` or `v2`).
+- Any v2 robust wording must include both:
+  - frozen profile path: `experiments/configs/phase3/desync_v2_thresholds.yaml`
+  - stability-window artifact: `experiments/runs/phase3/desync_refine_lag8_fine/sensitivity_antiphase_threshold.csv`
+- Use near-boundary framing unless overlap clearly decreases.
+
 ## First Implementation Slice (Acceptance-Tests First)
 
 Implementation status:
@@ -47,6 +62,7 @@ Multi-patch runs (`num_patches > 1`) emit synchrony outputs in `metrics.csv`:
 - `synchrony_order_parameter`
 - `synchrony_phase_lock_fraction`
 - `synchrony_mean_abs_phase_lag`
+- `synchrony_antiphase_fraction`
 - `frac_hier_patch_<patch_id>` per patch
 
 ## Stage-1 Exploration Manifest
@@ -73,6 +89,34 @@ Multi-patch runs (`num_patches > 1`) emit synchrony outputs in `metrics.csv`:
 5. Generate Stage-2 YAMLs + run confirmation:
 - `python scripts/phase3_generate_configs.py --manifest experiments/configs/phase3/manifest_confirmation.csv --stage confirmation`
 - `python scripts/phase3_run_manifest.py --manifest experiments/configs/phase3/manifest_confirmation.csv --stage confirmation --run-root experiments/runs/phase3/confirmation_stage2 --max-retries 1`
+
+## Near-Zero Desync Refinement (Lag Bottleneck Check)
+
+If desync classification is blocked only by lag while order/lock indicate desync tendency:
+
+1. Generate refinement manifest with doubled runtime:
+- `python scripts/phase3_generate_desync_refine.py --manifest-out experiments/configs/phase3/manifest_desync_refine.csv --seed-base 9101`
+
+2. Generate configs and run refinement:
+- `python scripts/phase3_generate_configs.py --manifest experiments/configs/phase3/manifest_desync_refine.csv --stage confirmation`
+- `python scripts/phase3_run_manifest.py --manifest experiments/configs/phase3/manifest_desync_refine.csv --stage confirmation --run-root experiments/runs/phase3/desync_refine --max-retries 1`
+- conservative parallel alternative for laptops (2 shards):
+- `python scripts/phase3_run_manifest_sharded.py --manifest experiments/configs/phase3/manifest_desync_refine.csv --stage confirmation --run-root experiments/runs/phase3/desync_refine --shards 2 --max-retries 1`
+
+3. Prepare analysis with frozen thresholds + anti-phase output:
+- `python scripts/phase3_prepare_analysis.py --run-root experiments/runs/phase3/desync_refine --manifest experiments/configs/phase3/manifest_desync_refine.csv --latest-output experiments/runs/phase3/desync_refine/analysis_latest_per_config.csv --block-output experiments/runs/phase3/desync_refine/analysis_full_grid_block.csv --label-mode fixed --sync-order-hi 0.93347525 --sync-lock-hi 0.84820575 --sync-lag-hi 21.8140085 --desync-order-lo 0.91162775 --desync-lock-lo 0.759961 --desync-lag-lo 28.20011175`
+
+4. Build cell-level desync verdict table:
+- `python scripts/phase3_desync_verdict.py --analysis-csv experiments/runs/phase3/desync_refine/analysis_latest_per_config.csv --threshold-profile experiments/configs/phase3/desync_v2_thresholds.yaml --cells-output experiments/runs/phase3/desync_refine/desync_cells.csv --robust-output experiments/runs/phase3/desync_refine/desync_robust_cells.csv`
+
+5. Quantify anti-phase threshold sensitivity (artifact-only re-analysis):
+- `python scripts/phase3_antiphase_sensitivity.py --analysis-csv experiments/runs/phase3/desync_refine_lag8_fine/analysis_latest_per_config.csv --threshold-profile experiments/configs/phase3/desync_v2_thresholds.yaml --antiphase-min 0.92 --antiphase-max 0.95 --antiphase-step 0.001 --output-csv experiments/runs/phase3/desync_refine_lag8_fine/sensitivity_antiphase_threshold.csv --fig-output experiments/runs/phase3/desync_refine_lag8_fine/fig_phase3_v2_antiphase_sensitivity.png`
+
+6. Generate classifier-comparison figures (v1 vs v2):
+- `python scripts/phase3_plot_classifier_comparison.py --cells-v1 experiments/runs/phase3/desync_refine_lag8_fine/desync_cells_v1.csv --cells-v2 experiments/runs/phase3/desync_refine_lag8_fine/desync_cells_v2.csv --fig-probability experiments/runs/phase3/desync_refine_lag8_fine/fig_phase3_desync_probability_v1_v2.png --fig-plane experiments/runs/phase3/desync_refine_lag8_fine/fig_phase3_lag_antiphase_plane_v1_v2.png`
+
+7. One-command closeout (verdict tables + sensitivity + figures):
+- `python scripts/phase3_closeout.py --run-root experiments/runs/phase3/desync_refine_lag8_fine --profile experiments/configs/phase3/desync_v2_thresholds.yaml`
 
 ## Invariants
 
