@@ -34,6 +34,8 @@ REQUIRED_TOP_LEVEL_SECTIONS = (
 ALLOWED_COUPLING_MODES = ("none", "mean_field", "pairwise")
 ALLOWED_COUPLING_TOPOLOGIES = ("all_to_all", "ring")
 ALLOWED_COUPLING_TARGET_METRICS = ("frac_hier",)
+ALLOWED_GRAPH_MODES = ("undirected_contact", "directed_influence")
+ALLOWED_HYPERBOLICITY_PROXY_MODES = ("tree_likeness",)
 
 
 def _expect_mapping(obj: Any, *, where: str) -> Mapping[str, Any]:
@@ -154,6 +156,48 @@ def _validate_inter_patch_coupling(
             )
 
 
+def _validate_graph_extraction(ge: Mapping[str, Any]) -> None:
+    if not isinstance(ge["enabled"], bool):
+        raise ConfigError("root.graph_extraction.enabled must be boolean")
+    if not isinstance(ge["emit_edge_list"], bool):
+        raise ConfigError("root.graph_extraction.emit_edge_list must be boolean")
+    if not isinstance(ge["emit_window_metrics"], bool):
+        raise ConfigError("root.graph_extraction.emit_window_metrics must be boolean")
+    if not isinstance(ge["pool_patches"], bool):
+        raise ConfigError("root.graph_extraction.pool_patches must be boolean")
+
+    graph_mode = str(ge["graph_mode"])
+    if graph_mode not in ALLOWED_GRAPH_MODES:
+        raise ConfigError(
+            "root.graph_extraction.graph_mode must be one of "
+            f"{ALLOWED_GRAPH_MODES}; got {graph_mode!r}"
+        )
+
+    try:
+        window_periods = int(ge["window_periods"])
+    except (TypeError, ValueError) as e:
+        raise ConfigError("root.graph_extraction.window_periods must be integer") from e
+    if window_periods < 1:
+        raise ConfigError("root.graph_extraction.window_periods must be >= 1")
+
+
+def _validate_structural_metrics(sm: Mapping[str, Any]) -> None:
+    metrics_to_compute = sm["metrics_to_compute"]
+    if not isinstance(metrics_to_compute, list) or not all(
+        isinstance(item, str) for item in metrics_to_compute
+    ):
+        raise ConfigError(
+            "root.structural_metrics.metrics_to_compute must be a list of strings"
+        )
+
+    proxy_mode = str(sm["hyperbolicity_proxy_mode"])
+    if proxy_mode not in ALLOWED_HYPERBOLICITY_PROXY_MODES:
+        raise ConfigError(
+            "root.structural_metrics.hyperbolicity_proxy_mode must be one of "
+            f"{ALLOWED_HYPERBOLICITY_PROXY_MODES}; got {proxy_mode!r}"
+        )
+
+
 # ---------------------------------------------------------------------
 # Dataclasses
 # ---------------------------------------------------------------------
@@ -233,6 +277,22 @@ class InterPatchCoupling:
 
 
 @dataclass(frozen=True)
+class GraphExtraction:
+    enabled: bool
+    graph_mode: str
+    window_periods: int
+    emit_edge_list: bool
+    emit_window_metrics: bool
+    pool_patches: bool
+
+
+@dataclass(frozen=True)
+class StructuralMetrics:
+    metrics_to_compute: list[str]
+    hyperbolicity_proxy_mode: str
+
+
+@dataclass(frozen=True)
 class Config:
     schema_version: str
     meta: ExperimentMeta
@@ -242,6 +302,8 @@ class Config:
     runtime_and_reproducibility: RuntimeAndReproducibility
     observation: Observation
     inter_patch_coupling: InterPatchCoupling
+    graph_extraction: GraphExtraction
+    structural_metrics: StructuralMetrics
     resolved: Dict[str, Any]
 
     def to_resolved_dict(self) -> Dict[str, Any]:
@@ -276,6 +338,8 @@ def load_config(path: str | Path) -> Config:
     _set_default(resolved, "date_created", "")
     _set_default(resolved, "schema_version", "1.0")
     _set_default(resolved, "inter_patch_coupling", {})
+    _set_default(resolved, "graph_extraction", {})
+    _set_default(resolved, "structural_metrics", {})
 
     for section in REQUIRED_TOP_LEVEL_SECTIONS:
         resolved[section] = dict(_expect_mapping(resolved[section], where=f"root.{section}"))
@@ -283,6 +347,18 @@ def load_config(path: str | Path) -> Config:
         _expect_mapping(
             resolved["inter_patch_coupling"],
             where="root.inter_patch_coupling",
+        )
+    )
+    resolved["graph_extraction"] = dict(
+        _expect_mapping(
+            resolved["graph_extraction"],
+            where="root.graph_extraction",
+        )
+    )
+    resolved["structural_metrics"] = dict(
+        _expect_mapping(
+            resolved["structural_metrics"],
+            where="root.structural_metrics",
         )
     )
 
@@ -360,6 +436,31 @@ def load_config(path: str | Path) -> Config:
     _set_default(ic, "target_metric", "frac_hier")
     _validate_inter_patch_coupling(ic, num_patches=num_patches)
 
+    # Phase 4 structural observation
+    ge = resolved["graph_extraction"]
+    _set_default(ge, "enabled", False)
+    _set_default(ge, "graph_mode", "undirected_contact")
+    _set_default(ge, "window_periods", 1)
+    _set_default(ge, "emit_edge_list", False)
+    _set_default(ge, "emit_window_metrics", False)
+    _set_default(ge, "pool_patches", False)
+    _validate_graph_extraction(ge)
+
+    sm = resolved["structural_metrics"]
+    _set_default(
+        sm,
+        "metrics_to_compute",
+        [
+            "density",
+            "clustering_mean",
+            "tree_excess_ratio",
+            "branching_skew",
+            "delta_hyperbolicity_proxy",
+        ],
+    )
+    _set_default(sm, "hyperbolicity_proxy_mode", "tree_likeness")
+    _validate_structural_metrics(sm)
+
     # -----------------------------------------------------------------
     # Typed objects
     # -----------------------------------------------------------------
@@ -425,6 +526,20 @@ def load_config(path: str | Path) -> Config:
         target_metric=str(ic["target_metric"]),
     )
 
+    graph_extraction = GraphExtraction(
+        enabled=bool(ge["enabled"]),
+        graph_mode=str(ge["graph_mode"]),
+        window_periods=int(ge["window_periods"]),
+        emit_edge_list=bool(ge["emit_edge_list"]),
+        emit_window_metrics=bool(ge["emit_window_metrics"]),
+        pool_patches=bool(ge["pool_patches"]),
+    )
+
+    structural_metrics = StructuralMetrics(
+        metrics_to_compute=[str(x) for x in sm["metrics_to_compute"]],
+        hyperbolicity_proxy_mode=str(sm["hyperbolicity_proxy_mode"]),
+    )
+
     return Config(
         schema_version=str(resolved["schema_version"]),
         meta=meta,
@@ -434,5 +549,7 @@ def load_config(path: str | Path) -> Config:
         runtime_and_reproducibility=runtime_and_reproducibility,
         observation=observation,
         inter_patch_coupling=inter_patch_coupling,
+        graph_extraction=graph_extraction,
+        structural_metrics=structural_metrics,
         resolved=resolved,
     )

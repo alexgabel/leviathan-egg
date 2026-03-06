@@ -21,16 +21,34 @@ The repository is organized as follows:
 For a comprehensive overview of the project goals, scope, and alignment, please refer to the `PROJECT_SUMMARY.md` file, which serves as the authoritative guide.
 
 Current execution details are documented in:
-- `paper/notes/phase3_kickoff.md` (current Phase 3 kickoff and implementation slice)
-- `paper/notes/phase3_design.md` (Phase 3 design and acceptance tests)
-- `experiments/configs/phase3/README.md` (Phase 3 config contract)
+- `paper/notes/phase4_kickoff.md` (current Phase 4 kickoff and implementation slice)
+- `paper/notes/phase4_design.md` (Phase 4 design and acceptance tests)
+- `experiments/configs/phase4/README.md` (Phase 4 config contract)
 
 Phase 2 closure artifacts are archived at:
 - `paper/notes/phase2_results_draft.md`
 - `paper/notes/phase2_sanity_pass.md`
 - `paper/notes/phase2_frozen_artifacts.sha256`
 
-Before Phase 3 implementation changes, verify the frozen Phase 2 baseline:
+Before Phase 4 implementation changes, verify the frozen Phase 3 baseline:
+- `python scripts/phase3_verify_baseline_lock.py --lock-file experiments/runs/phase3/desync_refine_lag8_fine/baseline_lock.yaml`
+
+Before any Phase-4 exploratory run, acceptance tests must be green:
+- `PYTHONPATH=src python -m pytest -q tests/test_phase4_acceptance.py`
+
+Phase-4 execution scripts:
+- `python scripts/phase4_generate_configs.py`
+- `python scripts/phase4_run_manifest.py`
+- `python scripts/phase4_prepare_analysis.py`
+- `python scripts/phase4_plot_stage1.py`
+
+First Phase-4 exploration outputs now live under:
+- `experiments/runs/phase4/exploration_stage1/analysis_latest_per_config.csv`
+- `experiments/runs/phase4/exploration_stage1/structure_profile_summary.csv`
+- `experiments/runs/phase4/exploration_stage1/fig_phase4_structure_vs_hierarchy_scatter.png`
+- `experiments/runs/phase4/exploration_stage1/fig_phase4_structure_profile_bars.png`
+
+Legacy Phase-2 baseline verification remains available at:
 - `python scripts/phase2_verify_frozen_artifacts.py`
 
 <!-- This research is intended for submission to the International Conference on Computational Social Science (ICCS) and will be prepared following the Lecture Notes in Computer Science (LNCS) format. -->
@@ -46,3 +64,15 @@ v2 (conditional, version-scoped):
 
 Policy:
 - any "robust desynchrony" wording must explicitly name classifier version (`v1` or `v2`).
+
+## Phase 4 Claim Governance (Active)
+
+Primary exploratory wording:
+- structural signatures appear associated with hierarchy intensity under the current Phase-4 graph schema.
+
+Current scoping:
+- graph extraction is snapshot-derived structural observation v1
+- claims must name the graph mode and schema version if a result depends on that choice
+
+Reserved stronger wording:
+- use "robustly" only after replicated criteria are predeclared and passed.

@@ -21,6 +21,7 @@ import yaml
 
 from leviathan_egg.config import load_config
 from leviathan_egg.metrics import collect_metrics
+from leviathan_egg.phase4_graphs import Phase4WindowCollector, write_phase4_artifacts
 from leviathan_egg.seasons import seasonal_terms
 from leviathan_egg.world import World
 
@@ -53,6 +54,9 @@ def _artifact_paths_from_run_dir(
     seed_path = run_dir / "seed.txt"
     git_commit_path = run_dir / "git_commit.txt"
     failed_marker_path = run_dir / "FAILED.txt"
+    graph_windows_path = run_dir / "graph_windows.csv"
+    graph_edges_path = run_dir / "graph_edges.csv"
+    graph_schema_path = run_dir / "graph_schema_version.txt"
 
     artifact_entries = [
         f"metrics:{metrics_path}",
@@ -60,6 +64,12 @@ def _artifact_paths_from_run_dir(
         f"seed:{seed_path}",
         f"git_commit:{git_commit_path}",
     ]
+    if graph_windows_path.exists():
+        artifact_entries.append(f"graph_windows:{graph_windows_path}")
+    if graph_edges_path.exists():
+        artifact_entries.append(f"graph_edges:{graph_edges_path}")
+    if graph_schema_path.exists():
+        artifact_entries.append(f"graph_schema_version:{graph_schema_path}")
     failed_marker_path_str = ""
     if include_failed_marker:
         failed_marker_path_str = str(failed_marker_path)
@@ -203,7 +213,13 @@ def _migrate_run_index_schema(index_path: Path) -> None:
     backfill_run_index(index_path)
 
 
-def _run_single_simulation(config_path: Path, run_dir: Path) -> int:
+def _run_single_simulation(
+    config_path: Path,
+    run_dir: Path,
+    *,
+    run_id: str,
+    git_commit: str,
+) -> int:
     cfg = load_config(config_path)
 
     # Initialize world
@@ -214,6 +230,14 @@ def _run_single_simulation(config_path: Path, run_dir: Path) -> int:
     # Emit Phase 3 per-patch/synchrony outputs for any multi-patch run.
     # Single-patch runs retain historical metric schema.
     include_phase3_metrics = bool(cfg.world_structure.num_patches > 1)
+    include_phase4_graphs = bool(
+        cfg.graph_extraction.enabled
+        and (
+            cfg.graph_extraction.emit_edge_list
+            or cfg.graph_extraction.emit_window_metrics
+        )
+    )
+    phase4_collector = Phase4WindowCollector(cfg) if include_phase4_graphs else None
 
     rows: List[Dict[str, float]] = []
 
@@ -229,6 +253,8 @@ def _run_single_simulation(config_path: Path, run_dir: Path) -> int:
             )
             metrics["t"] = float(t)
             rows.append(metrics)
+            if phase4_collector is not None:
+                phase4_collector.observe(world, t=t)
 
     # Write metrics.csv
     metrics_path = run_dir / "metrics.csv"
@@ -253,6 +279,20 @@ def _run_single_simulation(config_path: Path, run_dir: Path) -> int:
     # Write seed
     with (run_dir / "seed.txt").open("w", encoding="utf-8") as f:
         f.write(str(cfg.runtime_and_reproducibility.random_seed) + "\n")
+
+    if phase4_collector is not None:
+        graph_window_rows, graph_edge_rows = phase4_collector.finalize(
+            run_id=run_id,
+            config_path=str(config_path),
+            seed=cfg.runtime_and_reproducibility.random_seed,
+            git_commit=git_commit,
+            schema_version=cfg.schema_version,
+        )
+        write_phase4_artifacts(
+            run_dir,
+            graph_window_rows=graph_window_rows,
+            graph_edge_rows=graph_edge_rows,
+        )
 
     return len(rows)
 
@@ -283,7 +323,13 @@ def run_simulation(
     for attempt in range(retry_budget + 1):
         attempts_used = attempt
         try:
-            rows_logged = _run_single_simulation(config_path, run_dir)
+            git_commit = _git_commit_hash()
+            rows_logged = _run_single_simulation(
+                config_path,
+                run_dir,
+                run_id=run_id,
+                git_commit=git_commit,
+            )
             failed_path = run_dir / "FAILED.txt"
             if failed_path.exists():
                 failed_path.unlink()

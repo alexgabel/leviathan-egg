@@ -1,0 +1,82 @@
+experiment_name: phase4x_sp-hierarchical_lock_gm-undirected_wp1
+description: 'Phase 4 Stage-1 generated config: source_profile=hierarchical_lock;graph_mode=undirected_contact;window_periods=1'
+author: Alex Gabel
+date_created: '2026-01-27'
+schema_version: '1.0'
+world_structure:
+  num_patches: 1
+  population_sizes:
+    agents: 300
+  environmental_parameters: {}
+seasonality:
+  seasonal_period: 120
+  phase_offsets:
+    patch_0: 0.0
+  forcing_amplitudes:
+    aggregation_benefit: 1.0
+    coordination_cost: 0.6
+    hierarchy_rent: 0.9
+    crisis: 0.8
+    festival: 1.0
+  forcing_sign:
+    authority_coupling: 1
+authority_and_power:
+  violence_factor: 0.45
+  information_spread_rate: 0.45
+  charisma_levels:
+    agents: 1.0
+  authority_threshold: 0.7
+  authority_steepness: 3.0
+  benefit_scale: 2.0
+  cost_scale: 0.8
+  cost_exponent: 1.6
+  rent_scale: 0.4
+  domination_tax: 0.6
+  lock_in_effects: true
+  exit_friction_base: 0.0
+  exit_friction_from_violence: 1.2
+  exit_friction_from_information: 1.2
+  memory_decay: 0.06
+  prestige_noise: 0.05
+runtime_and_reproducibility:
+  total_steps: 24000
+  burn_in_period: 2400
+  random_seed: 8105
+  logging_frequency: 1
+observation:
+  metrics_to_log:
+  - frac_hier
+  - num_groups
+  - mean_group_size
+  - max_group_size
+  - gini_prestige
+  - festival
+  - crisis
+  aggregation_windows:
+  - 120
+  - 600
+inter_patch_coupling:
+  enabled: false
+  mode: none
+  topology: all_to_all
+  strength: 0.0
+  sign: 1
+  lag_steps: 0
+  normalize_by_degree: true
+  target_metric: frac_hier
+source_profile: hierarchical_lock
+graph_extraction:
+  enabled: true
+  graph_mode: undirected_contact
+  window_periods: 1
+  emit_edge_list: true
+  emit_window_metrics: true
+  pool_patches: false
+structural_metrics:
+  metrics_to_compute:
+  - density
+  - clustering_mean
+  - tree_excess_ratio
+  - branching_skew
+  - delta_hyperbolicity_proxy
+  hyperbolicity_proxy_mode: tree_likeness

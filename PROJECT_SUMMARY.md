@@ -94,12 +94,12 @@ Claim policy:
 - classifier-invariant "robustly" upgrade is not passed under strict sanity criteria
 - frozen artifact manifest: `paper/notes/phase2_frozen_artifacts.sha256`
 
-### Phase 3 — Multi-Patch Desynchronization (current kickoff)
+### Phase 3 — Multi-Patch Desynchronization (closed; claims frozen)
 - Independent seasonal phases
 - Signed seasonal coupling
 - Synchrony metrics
 
-### Phase 4 — Structural Signatures
+### Phase 4 — Structural Signatures (current kickoff)
 - Interaction graphs
 - Hyperbolicity / tree-likeness metrics
 - Correlation with hierarchy
