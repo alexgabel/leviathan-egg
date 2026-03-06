@@ -34,3 +34,15 @@ Before Phase 3 implementation changes, verify the frozen Phase 2 baseline:
 - `python scripts/phase2_verify_frozen_artifacts.py`
 
 <!-- This research is intended for submission to the International Conference on Computational Social Science (ICCS) and will be prepared following the Lecture Notes in Computer Science (LNCS) format. -->
+
+## Phase 3 Claim Governance (Locked)
+
+v1 (headline, conservative):
+- robust desynchrony is not established under strict lag-gated criteria.
+
+v2 (conditional, version-scoped):
+- robust desynchrony is supported only under the frozen profile `experiments/configs/phase3/desync_v2_thresholds.yaml`
+- and only within the reported sensitivity window (`0.920` to `0.939` from `experiments/runs/phase3/desync_refine_lag8_fine/sensitivity_antiphase_threshold.csv`).
+
+Policy:
+- any "robust desynchrony" wording must explicitly name classifier version (`v1` or `v2`).

@@ -16,6 +16,20 @@ No retroactive Phase-2 claim edits are allowed during Phase 3 implementation.
 Preflight check before Phase 3 changes:
 - `python scripts/phase2_verify_frozen_artifacts.py`
 
+## Baseline Lock (Phase-3 Desync Closeout)
+
+Canonical closeout inputs are locked to:
+- run root: `experiments/runs/phase3/desync_refine_lag8_fine`
+- threshold profile: `experiments/configs/phase3/desync_v2_thresholds.yaml`
+- lock file: `experiments/runs/phase3/desync_refine_lag8_fine/baseline_lock.yaml`
+
+Verification command:
+- `python scripts/phase3_verify_baseline_lock.py`
+
+Policy:
+- no new exploratory sweeps while lock status is `LOCKED`
+- only permit new runs if `scripts/phase3_closure_check.py` fails a closure gate
+
 ## Claim Language Lock (Must Match Notes)
 
 Headline claim (v1, conservative):

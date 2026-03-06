@@ -1,0 +1,19 @@
+schema_version: '1.0'
+status: LOCKED
+locked_at_utc: '2026-03-06T10:40:33.796423+00:00'
+lock_reason: Phase-3 desync closeout baseline lock before final closure gate evaluation.
+canonical_run_root: /Users/agabel/projects/leviathan-egg/experiments/runs/phase3/desync_refine_lag8_fine
+canonical_threshold_profile: /Users/agabel/projects/leviathan-egg/experiments/configs/phase3/desync_v2_thresholds.yaml
+policy:
+  no_new_exploratory_sweeps: true
+  allow_new_runs_only_if: phase3_closure_check.py fails a closure gate
+  notes: Treat canonical inputs as immutable for claim evaluation and closeout regeneration.
+hashes:
+- path: /Users/agabel/projects/leviathan-egg/experiments/configs/phase3/desync_v2_thresholds.yaml
+  sha256: 3df831d24370f4ca39d240a1790a0b5323364fe285fc3a4bbaaff66dd7332d7f
+- path: /Users/agabel/projects/leviathan-egg/experiments/runs/phase3/desync_refine_lag8_fine/run_index.csv
+  sha256: 8b00d23508f6ffaaf3662942c5e286e5935aa098f9542d9fdddf3cd824d9bb1a
+- path: /Users/agabel/projects/leviathan-egg/experiments/runs/phase3/desync_refine_lag8_fine/analysis_latest_per_config.csv
+  sha256: d6d19a0c373260c99b258d3517108a629493c5e0ec3ee5230e8b639df7e44dfa
+- path: /Users/agabel/projects/leviathan-egg/experiments/runs/phase3/desync_refine_lag8_fine/analysis_latest_per_config_v2.csv
+  sha256: 92f16a047a904f388f39bcb21ee1866d8fe716f72be6be1f75f7697506e03177
