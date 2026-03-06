@@ -1,0 +1,74 @@
+experiment_name: "demo_v2_single_patch_reversal"
+description: >
+  Demo-v2 scenario: single-patch run with weaker lock-in and stronger seasonal
+  modulation for more visible temporal structure.
+author: "Leviathan Egg Team"
+date_created: "2026-02-17"
+schema_version: "1.0"
+
+world_structure:
+  num_patches: 1
+  population_sizes:
+    agents: 120
+  environmental_parameters: {}
+
+seasonality:
+  seasonal_period: 120
+  phase_offsets:
+    patch_0: 0.0
+  forcing_amplitudes:
+    aggregation_benefit: 1.2
+    coordination_cost: 0.9
+    hierarchy_rent: 1.1
+    crisis: 0.9
+    festival: 1.2
+  forcing_sign:
+    authority_coupling: 1
+
+authority_and_power:
+  violence_factor: 0.15
+  information_spread_rate: 0.10
+  charisma_levels:
+    agents: 1.0
+  authority_threshold: 1.2
+  authority_steepness: 2.5
+  benefit_scale: 2.2
+  cost_scale: 0.9
+  cost_exponent: 1.5
+  rent_scale: 0.25
+  domination_tax: 0.9
+  lock_in_effects: false
+  exit_friction_base: 0.0
+  exit_friction_from_violence: 0.3
+  exit_friction_from_information: 0.3
+  memory_decay: 0.25
+  prestige_noise: 0.10
+
+runtime_and_reproducibility:
+  total_steps: 9000
+  burn_in_period: 900
+  random_seed: 111
+  logging_frequency: 1
+
+observation:
+  metrics_to_log:
+    - frac_hier
+    - num_groups
+    - mean_group_size
+    - max_group_size
+    - gini_prestige
+    - festival
+    - crisis
+  aggregation_windows:
+    - 120
+    - 600
+
+inter_patch_coupling:
+  enabled: false
+  mode: none
+  topology: all_to_all
+  strength: 0.0
+  sign: 1
+  lag_steps: 0
+  normalize_by_degree: true
+  target_metric: frac_hier

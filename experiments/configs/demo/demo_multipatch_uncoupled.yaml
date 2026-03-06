@@ -1,0 +1,80 @@
+experiment_name: "demo_multipatch_uncoupled"
+description: >
+  Demo scenario: four independent patches with staggered seasonal phases and no
+  coupling. Visual baseline for multi-patch behavior.
+author: "Leviathan Egg Team"
+date_created: "2026-02-16"
+schema_version: "1.0"
+
+world_structure:
+  num_patches: 4
+  population_sizes:
+    patch_0: 80
+    patch_1: 80
+    patch_2: 80
+    patch_3: 80
+  environmental_parameters: {}
+
+seasonality:
+  seasonal_period: 120
+  phase_offsets:
+    patch_0: 0.0
+    patch_1: 0.25
+    patch_2: 0.5
+    patch_3: 0.75
+  forcing_amplitudes:
+    aggregation_benefit: 1.0
+    coordination_cost: 0.6
+    hierarchy_rent: 0.7
+    crisis: 0.6
+    festival: 1.0
+  forcing_sign:
+    authority_coupling: 1
+
+authority_and_power:
+  violence_factor: 0.30
+  information_spread_rate: 0.30
+  charisma_levels:
+    agents: 1.0
+  authority_threshold: 1.0
+  authority_steepness: 3.0
+  benefit_scale: 2.0
+  cost_scale: 0.8
+  cost_exponent: 1.6
+  rent_scale: 0.4
+  domination_tax: 0.6
+  lock_in_effects: true
+  exit_friction_base: 0.0
+  exit_friction_from_violence: 1.2
+  exit_friction_from_information: 1.2
+  memory_decay: 0.10
+  prestige_noise: 0.05
+
+runtime_and_reproducibility:
+  total_steps: 6000
+  burn_in_period: 600
+  random_seed: 202
+  logging_frequency: 1
+
+observation:
+  metrics_to_log:
+    - frac_hier
+    - num_groups
+    - mean_group_size
+    - max_group_size
+    - gini_prestige
+    - festival
+    - crisis
+  aggregation_windows:
+    - 120
+    - 600
+
+inter_patch_coupling:
+  enabled: false
+  mode: none
+  topology: ring
+  strength: 0.0
+  sign: 0
+  lag_steps: 0
+  normalize_by_degree: true
+  target_metric: frac_hier

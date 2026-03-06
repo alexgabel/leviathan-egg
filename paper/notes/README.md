@@ -21,3 +21,4 @@ Current files:
 - `phase3_results_draft.md`: Phase 3 classifier-versioned results and claim governance
 - `phase3_figure_captions.md`: publication-ready Phase 3 captions with v1/v2 claim lock
 - `phase4_design.md`: pre-implementation Phase 4 design and acceptance tests
+- `demo_visual_walkthrough.ipynb`: visual demo notebook for colleagues/students with under-the-hood pipeline explanation
